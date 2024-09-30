@@ -1,0 +1,143 @@
+terraform with CI/CD to automate cloud resources deployment\
+
+-- go trough terraform syntax in 20 minutes: 
+https://www.freecodecamp.org/news/terraform-syntax-for-beginners/
+--We will require :GitHub cli, aws cli and aws account, GitLab account,vs ode
+add "vscode-icons" to add those icons to your files
+
+steps
+write terracode - run terraform commands -- provision resources
+then 
+automating infrastructure creation, change is pushed, pipeline will run terra commands , and create resources
+
+
+installing https://dev.to/annysah/step-by-step-guide-to-installing-terraform-on-windows-m2e  - terraform
+
+1. Defining our provider - create a file provider.t - this defines the provider of our cloud provider
+- variable.tf - we want to define variables that we will reuse
+-----main.tf (or any other .tf file name): This is the primary Terraform configuration file. It contains the code that defines the resources you want to provision (e.g., virtual machines, databases, containers) using Terraform providers
+-----provider.tf (Optional): This file is used to configure Terraform providers that interact with specific cloud platforms or services (e.g., AWS, Azure, GCP). Here, you specify the provider name (e.g., aws), version, and any required configuration options (e.g., access keys, region). A single project can have multiple provider blocks, one for each provider you're using.
+-----variable.tf (Optional): This file helps you define reusable variables with types and optional default values. You can then use these variables throughout your Terraform configuration to make it more flexible and adaptable. For example, you could define variables for region, resource names, or instance sizes, and then reference them in different parts of your code.
+
+
+--2. Defining aws as our provider on provider.tf and configure region
+while following best practices create provider.tf and main.tf
+
+we are going to deploy a vpc, security group, ec2 instance and more things in the futures
+A VPC is a private, isolated section of the AWS cloud where you can launch resources.and An EC2 instance is a virtual server in the cloud. It provides on-demand compute capacity and resources like CPU, memory, and storage.
+
+In Terraform, modules are reusable blocks of infrastructure code. They allow you to encapsulate and organize related resources into a single unit, making your configurations more modular, maintainable, and reusable
+
+
+--3. So create a folder "module and name vpc and ec2
+
+
+--4.nav to vpc .. we are going to create 1 vpc, 1 subnet, 1 working group....
+
+A subnet is a division of a VPC that defines a range of IP addresses. It's like a smaller network within the larger VPC.
+A security group is a virtual firewall that controls inbound and outbound traffic to resources within a VPC.
+
+uses: Data Analytics and Machine Learning:
+
+Processing large datasets: Run data processing jobs on EC2 instances within a VPC.
+Training machine learning models: Use VPCs to host machine learning frameworks and training data.
+
+
+--5. In main.tf A CIDR (Classless Inter-Domain Routing) block is a range of IP addresses used to define a network. In the context of a VPC (Virtual Private Cloud) on AWS, it specifies the range of IP addresses that can be assigned to resources within that VPC. -- we will later on variable-lize it for best pratcies
+
+https://registry.terraform.io/providers/hashicorp/aws/latest/docs?q=aws_vpc  
+Purpose: This attribute enables DNS resolution within the VPC. (dns_support)
+enable_dns_hostnames
+
+Purpose: This attribute enables the automatic creation of DNS records for EC2 instances within the VPC. 
+
+
+--6. We will create an EC2 instance that will have access to the security group
+An AMI (Amazon Machine Image) is a template for creating EC2 instances. It contains the software and configuration information required to launch an instance
+
+
+Verified provider
+amzn2-x86_64-SQL_2019_Standard-2024.05.01
+its region specific it would be best to pick yours -- account
+
+In Terraform, modules are reusable blocks of infrastructure code. They allow you to encapsulate and organize related resources into a single unit, making your configurations more modular, maintainable, and reusable.
+
+
+if you want to call a value, you specify it as an output from the module you want transfer it from and call it in the module (variables) you want to call it in
+
+after describing it in output and variables,,,,the main py acts a bridge to ensure they are able to communicate with eachother
+
+
+youll get an error on module "ec2" [ref to figure]
+
+
+
+--7.. we need to configure aws command..this s where it comes in
+
+configuring aws - https://www.youtube.com/watch?v=QhmFnlbbwP4&ab_channel=CloudChamp
+
+then run aws configure
+then terraform init
+terraform validate
+terraform plan - shows what will create
+terraform apply -auto-approve  -- create
+terraform DESTROY -auto-approve  -- destroys
+->Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+
+BE VERY CAREFUL WITH THE AMI AND instance type 
+if they conflict
+
+
+terraform.tfstate - needs to be on the backend for production scenarios
+
+n Terraform, a backend.tf file (sometimes referred to as "remote backend") is used to configure how Terraform stores its state information. By default, Terraform stores its state (information about the resources you've created) in a local file named terraform.tfstate. However, using a remote backend offers several advantages, particularly for managing infrastructure in a team environment.
+
+Here's how backend.tf with S3 and DynamoDB works:
+
+Storing State in S3:
+
+The backend.tf file specifies S3 as the storage backend for the Terraform state.
+Terraform will upload the state file (terraform.tfstate) to a designated S3 bucket within your AWS account.
+This enables centralized storage of the state file, accessible by any authorized user with proper permissions.
+Locking with DynamoDB:
+
+Terraform utilizes DynamoDB, a NoSQL database service hosted by AWS, to implement state locking.
+When applying Terraform configuration changes, it acquires a lock on the state file in DynamoDB.
+This prevents simultaneous modifications by multiple users, ensuring consistency and avoiding conflicts when managing infrastructure state.
+Benefits of using S3 and DynamoDB backend:
+
+Centralized storage: State file is stored in S3, accessible from anywhere with proper credentials.
+Versioning: S3 provides built-in versioning, allowing you to roll back to previous state versions if needed.
+Locking: DynamoDB prevents simultaneous modifications to the state file, ensuring data consistency.
+Team collaboration: Facilitates collaboration by allowing multiple users to manage the infrastructure state.
+Security: S3 offers configurable access control to manage who can access the state file.
+Additional Considerations:
+
+You need to configure the S3 bucket and DynamoDB table in your AWS account before using them with the backend.
+The backend.tf file specifies the S3 bucket name and DynamoDB table name to be used for state storage and locking.
+Setting up a remote backend requires additional configuration compared to the local state file.
+
+
+
+storing the backend type
+--8 navigate to your aws backend and type s3 bucket and create folder
+create backend tfd -- tthis the best practice
+--create dynamo db for state locking - to avoid conflicts of changes
+-- run terraform init pekee
+
+
+
+NOW WE MOVE TO GITLAB - CI/CD PIPELINE TO AUTOMATE THIS PROCESS
+--9 Go to GitLab responsitory -> setting up ssh keys
+https://stackoverflow.com/questions/35901982/how-do-i-add-an-ssh-key-in-gitlab
+
+a) ssh-keygen -t rsa  -> generating public private rsa
+press enter -> enter passphrase -> chukua the .pub
+https://www.youtube.com/watch?v=GhEVOeqz9fk&ab_channel=CodingBot
+
+search for gitignore ya Terraform and create a file and paste
+ADD THE COMMANDS
+
+git remote add origin https://gitlab.com/test-group872640/cicdtf.git
+git branch -M main
+git push -uf origin main
